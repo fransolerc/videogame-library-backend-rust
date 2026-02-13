@@ -1,0 +1,45 @@
+[package]
+name = "videogame-library-backend-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web Framework (Spring Boot equivalent)
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Serialization (Jackson equivalent)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database (Spring Data JPA / Hibernate equivalent)
+# Using SQLx for async database interaction
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "macros"] }
+
+# Date and Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Environment variables
+dotenvy = "0.15"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# JWT (Spring Security / JJWT equivalent)
+jsonwebtoken = "9.2"
+
+# HTTP Client (for IGDB API)
+reqwest = { version = "0.11", features = ["json"] }
+
+# Kafka
+rdkafka = { version = "0.36", features = ["cmake-build"] }
+
+[dev-dependencies]
+mockall = "0.12"
