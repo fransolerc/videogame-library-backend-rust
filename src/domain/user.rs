@@ -42,3 +42,11 @@ pub enum GameStatus {
     Playing,
     Completed,
 }
+
+/// Resultado del inicio de sesión.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginResult {
+    pub token: String,
+    pub user: User,
+    pub username: String,
+}

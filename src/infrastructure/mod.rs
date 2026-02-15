@@ -1,6 +1,4 @@
-// Infrastructure Layer
-// Contains concrete implementations of ports (adapters).
-// - Web (Controllers)
-// - Persistence (Database)
-// - External APIs (IGDB)
-// - Messaging (Kafka)
+pub mod web;
+pub mod persistence;
+pub mod igdb;
+pub mod kafka;

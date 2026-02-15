@@ -1,2 +1,2 @@
-// Application Layer
-// Orchestrates workflows. Contains ports (UseCase interfaces) and use cases (services).
+pub mod ports;
+pub mod services;

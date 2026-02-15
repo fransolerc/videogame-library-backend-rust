@@ -1,0 +1,1 @@
+pub mod favorite_game_event_publisher;

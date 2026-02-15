@@ -4,22 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# Web Framework (Spring Boot equivalent)
+# Web Framework
 axum = "0.7"
 tokio = { version = "1.0", features = ["full"] }
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["cors", "trace"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }
 
-# Serialization (Jackson equivalent)
+# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# Database (Spring Data JPA / Hibernate equivalent)
-# Using SQLx for async database interaction
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "macros"] }
+# Database (SQLite)
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "uuid", "chrono", "macros"] }
 
 # Date and Time
 chrono = { version = "0.4", features = ["serde"] }
+
+# UUID
+uuid = { version = "1.0", features = ["serde", "v4"] }
+
+# Async Traits
+async-trait = "0.1"
 
 # Environment variables
 dotenvy = "0.15"
@@ -32,14 +38,15 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "1.0"
 anyhow = "1.0"
 
-# JWT (Spring Security / JJWT equivalent)
+# Security
+bcrypt = "0.15"
 jsonwebtoken = "9.2"
 
-# HTTP Client (for IGDB API)
+# HTTP Client
 reqwest = { version = "0.11", features = ["json"] }
 
-# Kafka
-rdkafka = { version = "0.36", features = ["cmake-build"] }
+# Kafka (Removed to avoid build issues on Windows without C++ tools)
+# rdkafka = { version = "0.36", features = ["cmake-build"] }
 
 [dev-dependencies]
 mockall = "0.12"

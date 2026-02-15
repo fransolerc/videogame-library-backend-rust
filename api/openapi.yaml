@@ -1,0 +1,909 @@
+openapi: 3.0.1
+info:
+  title: Video Game Library API
+  version: 1.0.0
+  description: API para gestionar una biblioteca de videojuegos (integración con IGDB)
+  contact:
+    name: Francisco José Soler Conchello
+    email: franciscosoler.dev@gmail.com
+    url: https://www.linkedin.com/in/franciscojosesoler/
+servers:
+  - url: http://localhost:8080
+    description: Servidor de desarrollo local
+tags:
+  - name: Games
+    description: Operaciones relacionadas con videojuegos
+  - name: Platforms
+    description: Operaciones relacionadas con plataformas de videojuegos
+  - name: Users
+    description: Operaciones relacionadas con usuarios
+  - name: Library
+    description: Operaciones relacionadas con la biblioteca de juegos de un usuario
+  - name: Health
+    description: Operaciones relacionadas con el estado de la aplicación
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Comprobar el estado de la aplicación
+      description: >
+        Devuelve un mensaje simple para indicar que la aplicación está funcionando.
+      operationId: healthCheck
+      security: [] # Endpoint público
+      responses:
+        '200':
+          description: La aplicación está funcionando
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+  /games/search:
+    get:
+      tags:
+        - Games
+      summary: Buscar videojuegos por nombre
+      description: >
+        Busca videojuegos en la API externa de IGDB por su nombre.
+        Devuelve una lista de juegos que coinciden con el término de búsqueda.
+      operationId: searchGamesByName
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Nombre del juego a buscar
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Búsqueda exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameDTO'
+        '400':
+          description: Parámetro 'name' no proporcionado
+
+  /games/filter:
+    post:
+      tags:
+        - Games
+      summary: Filtrar videojuegos con criterios avanzados
+      description: >
+        Realiza una búsqueda avanzada de videojuegos en la API de IGDB utilizando una consulta de filtrado.
+        Permite filtrar, ordenar y paginar los resultados.
+      operationId: filterGames
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameFilterRequestDTO'
+      responses:
+        '200':
+          description: Búsqueda avanzada exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GamePageDTO'
+        '400':
+          description: Solicitud de filtrado inválida
+
+  /games/batch:
+    post:
+      tags:
+        - Games
+      summary: Obtener múltiples videojuegos por sus IDs
+      description: >
+        Obtiene los detalles completos de múltiples videojuegos a partir de una lista de IDs de IGDB.
+      operationId: getGamesByIds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                format: int64
+      responses:
+        '200':
+          description: Juegos encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameDTO'
+
+  /games/{id}:
+    get:
+      tags:
+        - Games
+      summary: Obtener un videojuego por su ID
+      description: >
+        Obtiene los detalles completos de un videojuego específico a partir de su ID de IGDB.
+      operationId: getGameById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del juego a buscar
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Juego encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSummaryDTO'
+        '404':
+          description: Juego no encontrado
+
+  /platforms:
+    get:
+      tags:
+        - Platforms
+      summary: Listar todas las plataformas de videojuegos
+      description: >
+        Devuelve una lista de todas las plataformas de videojuegos disponibles en IGDB.
+      operationId: listPlatforms
+      responses:
+        '200':
+          description: Lista de plataformas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlatformDTO'
+
+  /users/register:
+    post:
+      tags:
+        - Users
+      summary: Registrar un nuevo usuario
+      description: >
+        Crea un nuevo usuario en el sistema.
+        Requiere un nombre de usuario, un email y una contraseña.
+      operationId: registerUser
+      security: [] # Anulación de seguridad para que sea público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequestDTO'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '400':
+          description: Datos de registro inválidos
+        '409':
+          description: El usuario con este email ya existe
+
+  /users/login:
+    post:
+      tags:
+        - Users
+      summary: Iniciar sesión de usuario
+      description: >
+        Autentica a un usuario con su email y contraseña.
+        Si las credenciales son válidas, devuelve los datos del usuario (sin la contraseña).
+      operationId: loginUser
+      security: [] # Anulación de seguridad para que sea público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDTO'
+      responses:
+        '200':
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponseDTO'
+        '401':
+          description: Credenciales inválidas
+
+  /users/{userId}/games:
+    get:
+      tags:
+        - Library
+      summary: Listar todos los juegos en la biblioteca de un usuario
+      description: >
+        Devuelve una lista de todos los juegos que un usuario ha añadido a su biblioteca,
+        incluyendo el estado de cada juego.
+      operationId: listUserLibrary
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+      responses:
+        '200':
+          description: Lista de juegos en la biblioteca del usuario
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserGameDTO'
+        '404':
+          description: Usuario no encontrado
+
+  /users/{userId}/games/{gameId}:
+    get:
+      tags:
+        - Library
+      summary: Obtener el estado de un juego específico en la biblioteca del usuario
+      description: >
+        Devuelve el estado de un juego específico en la biblioteca del usuario.
+        Si el juego no está en la biblioteca, devuelve 404.
+      operationId: getUserGameStatus
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+        - name: gameId
+          in: path
+          required: true
+          description: ID del juego
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Estado del juego encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGameDTO'
+        '404':
+          description: Juego no encontrado en la biblioteca del usuario
+    put:
+      tags:
+        - Library
+      summary: Añadir o actualizar el estado de un juego en la biblioteca
+      description: >
+        Añade un juego a la biblioteca de un usuario o, si ya existe, actualiza su estado.
+        Esta operación es idempotente.
+      operationId: upsertGameInLibrary
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+        - name: gameId
+          in: path
+          required: true
+          description: ID del juego
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGameStatusRequestDTO'
+      responses:
+        '200':
+          description: Juego añadido/actualizado en la biblioteca
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGameDTO'
+        '400':
+          description: Solicitud inválida
+        '404':
+          description: Usuario o juego no encontrado
+    delete:
+      tags:
+        - Library
+      summary: Eliminar un juego de la biblioteca de un usuario
+      description: >
+        Elimina un juego de la biblioteca de un usuario.
+      operationId: removeGameFromLibrary
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+        - name: gameId
+          in: path
+          required: true
+          description: ID del juego
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '204':
+          description: Juego eliminado exitosamente
+        '404':
+          description: Usuario o juego no encontrado en la biblioteca
+
+  /users/{userId}/games/{gameId}/favorite:
+    post:
+      tags:
+        - Library
+      summary: Marcar un juego como favorito
+      description: >
+        Marca un juego como favorito. Si el juego no está en la biblioteca,
+        se añade automáticamente con el estado 'NONE'.
+      operationId: addGameToFavorites
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+        - name: gameId
+          in: path
+          required: true
+          description: ID del juego
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Juego marcado como favorito exitosamente. Devuelve el estado actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGameDTO'
+        '404':
+          description: El juego base no fue encontrado en la API externa.
+    delete:
+      tags:
+        - Library
+      summary: Quitar un juego de favoritos
+      description: >
+        Quita un juego de la lista de favoritos. Si el juego no tiene un estado
+        asignado (ej. 'PLAYING'), se elimina por completo de la biblioteca.
+      operationId: removeGameFromFavorites
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+        - name: gameId
+          in: path
+          required: true
+          description: ID del juego
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '204':
+          description: Juego quitado de favoritos
+        '404':
+          description: Juego no encontrado en la biblioteca del usuario
+
+  /users/{userId}/favorites:
+    get:
+      tags:
+        - Library
+      summary: Listar los juegos favoritos de un usuario
+      description: >
+        Devuelve una lista paginada de todos los juegos que un usuario ha
+        marcado como favoritos.
+      operationId: listFavoriteGames
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+        - name: page
+          in: query
+          description: Número de página (empezando en 0)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: Tamaño de la página
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lista paginada de juegos favoritos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGamePageDTO'
+        '404':
+          description: Usuario no encontrado
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ArtworkDTO:
+      type: object
+      description: Representa una obra de arte de un juego.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: El ID de la obra de arte.
+        alpha_channel:
+          type: boolean
+          description: Indica si la imagen tiene canal alfa.
+        animated:
+          type: boolean
+          description: Indica si la imagen es animada.
+        artwork_type:
+          type: integer
+          format: int64
+          description: El tipo de obra de arte.
+        checksum:
+          type: string
+          description: El checksum de la imagen.
+        game:
+          type: integer
+          format: int64
+          description: El ID del juego asociado.
+        height:
+          type: integer
+          description: La altura de la imagen en píxeles.
+        image_id:
+          type: string
+          description: El ID de la imagen en los servidores de IGDB.
+        url:
+          type: string
+          format: uri
+          description: La URL de la imagen.
+        width:
+          type: integer
+          description: El ancho de la imagen en píxeles.
+    GameDTO:
+      type: object
+      description: Representa los datos mínimos de un videojuego.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: El ID del juego (de IGDB).
+          minimum: 1
+        name:
+          type: string
+          description: El nombre del juego.
+          maxLength: 255
+        releaseDate:
+          type: string
+          format: date
+          description: Fecha de lanzamiento.
+          maxLength: 10
+        rating:
+          type: number
+          format: double
+          description: Puntuación media de los usuarios (0-100).
+          minimum: 0
+          maximum: 100
+        coverImageUrl:
+          type: string
+          format: uri
+          description: URL de la imagen de portada.
+          maxLength: 2048
+        platforms:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          description: Lista de plataformas disponibles.
+          maxItems: 50
+    GameSummaryDTO:
+      type: object
+      description: Representa los datos completos de un videojuego, extendiendo los datos mínimos.
+      allOf:
+        - $ref: '#/components/schemas/GameDTO'
+        - type: object
+          properties:
+            summary:
+              type: string
+              description: Resumen detallado del juego.
+              maxLength: 4096
+            storyline:
+              type: string
+              description: A short description of a games story.
+              maxLength: 4096
+            platforms:
+              type: array
+              items:
+                type: string
+                maxLength: 255
+              description: Lista de plataformas disponibles.
+              maxItems: 50
+            genres:
+              type: array
+              items:
+                type: string
+                maxLength: 255
+              description: Lista de géneros del juego.
+              maxItems: 50
+            videos:
+              type: array
+              items:
+                type: string
+                format: uri
+                maxLength: 2048
+              description: Lista de URLs de videos relacionados.
+              maxItems: 50
+            screenshots:
+              type: array
+              items:
+                type: string
+                format: uri
+                maxLength: 2048
+              description: Lista de URLs de capturas de pantalla.
+              maxItems: 50
+            artworks:
+              type: array
+              items:
+                $ref: '#/components/schemas/ArtworkDTO'
+
+    PlatformDTO:
+      type: object
+      description: Representa una plataforma de videojuegos.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: El ID de la plataforma (de IGDB).
+          minimum: 1
+        name:
+          type: string
+          description: El nombre de la plataforma.
+          maxLength: 255
+        generation:
+          type: integer
+          format: int32
+          description: La generación de la plataforma.
+          minimum: 1
+        platformType:
+          type: string
+          description: El tipo de plataforma.
+          enum:
+            - CONSOLE
+            - ARCADE
+            - PLATFORM
+            - OPERATING_SYSTEM
+            - PORTABLE_CONSOLE
+            - COMPUTER
+            - UNKNOWN
+          x-enum-descriptions:
+            - Consola de sobremesa (ej. PlayStation, Xbox)
+            - Máquina recreativa
+            - Plataforma de hardware genérica (ej. PC)
+            - Sistema operativo
+            - Consola portátil (ej. Nintendo Switch)
+            - Ordenador personal
+            - Tipo desconocido o no especificado
+
+    UserDTO:
+      type: object
+      description: Representa los datos públicos de un usuario.
+      properties:
+        id:
+          type: string
+          format: uuid
+          maxLength: 36
+          description: El ID único del usuario.
+        username:
+          type: string
+          maxLength: 255
+          description: El nombre de usuario.
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: El correo electrónico del usuario.
+
+    UserRegistrationRequestDTO:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      description: Datos necesarios para registrar un nuevo usuario.
+      properties:
+        username:
+          type: string
+          maxLength: 255
+          description: El nombre de usuario deseado.
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: El correo electrónico del usuario.
+        password:
+          type: string
+          format: password
+          maxLength: 255
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d\\W]{8,}$"
+          description: "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número."
+
+    GameStatusDTO:
+      type: string
+      description: El estado de un juego en la biblioteca de un usuario.
+      enum:
+        - NONE
+        - WANT_TO_PLAY
+        - PLAYING
+        - COMPLETED
+      x-enum-descriptions:
+        - El juego está en la biblioteca (ej. es favorito) pero no tiene un estado de juego activo.
+        - El usuario quiere jugar a este juego en el futuro.
+        - El usuario está jugando actualmente a este juego.
+        - El usuario ha completado este juego.
+
+    UpdateGameStatusRequestDTO:
+      type: object
+      description: Objeto para actualizar el estado de un juego.
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/GameStatusDTO'
+
+    UserGameDTO:
+      type: object
+      description: Representa la relación entre un usuario y un juego en su biblioteca.
+      properties:
+        userId:
+          type: string
+          format: uuid
+          maxLength: 36
+          description: El ID del usuario.
+        gameId:
+          type: integer
+          format: int64
+          minimum: 1
+          description: El ID del juego (de IGDB).
+        status:
+          $ref: '#/components/schemas/GameStatusDTO'
+        addedAt:
+          type: string
+          format: date-time
+          maxLength: 30
+          description: La fecha en que el juego fue añadido a la biblioteca.
+        isFavorite:
+          type: boolean
+          description: Indica si el juego está marcado como favorito.
+
+    PageableDTO:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+          minimum: 0
+        pageSize:
+          type: integer
+          minimum: 1
+        sort:
+          $ref: '#/components/schemas/SortDTO'
+      description: Información sobre la paginación.
+
+    SortDTO:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+        empty:
+          type: boolean
+      description: Información sobre la ordenación.
+
+    UserGamePageDTO:
+      type: object
+      description: Representa una página de resultados para las entradas de la biblioteca de un usuario.
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserGameDTO'
+          maxItems: 100
+        pageable:
+          $ref: '#/components/schemas/PageableDTO'
+        totalPages:
+          type: integer
+          minimum: 0
+          description: El número total de páginas.
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          description: El número total de elementos.
+        last:
+          type: boolean
+          description: Indica si esta es la última página.
+        first:
+          type: boolean
+          description: Indica si esta es la primera página.
+        size:
+          type: integer
+          minimum: 0
+          description: El tamaño de la página.
+        number:
+          type: integer
+          minimum: 0
+          description: El número de la página actual.
+        sort:
+          $ref: '#/components/schemas/SortDTO'
+        numberOfElements:
+          type: integer
+          minimum: 0
+          description: El número de elementos en la página actual.
+        empty:
+          type: boolean
+          description: Indica si la página está vacía.
+
+    GamePageDTO:
+      type: object
+      description: Representa una página de resultados para la búsqueda de juegos.
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameDTO'
+          maxItems: 100
+        pageable:
+          $ref: '#/components/schemas/PageableDTO'
+        totalPages:
+          type: integer
+          minimum: 0
+          description: El número total de páginas.
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          description: El número total de elementos.
+        last:
+          type: boolean
+          description: Indica si esta es la última página.
+        first:
+          type: boolean
+          description: Indica si esta es la primera página.
+        size:
+          type: integer
+          minimum: 0
+          description: El tamaño de la página.
+        number:
+          type: integer
+          minimum: 0
+          description: El número de la página actual.
+        sort:
+          $ref: '#/components/schemas/SortDTO'
+        numberOfElements:
+          type: integer
+          minimum: 0
+          description: El número de elementos en la página actual.
+        empty:
+          type: boolean
+          description: Indica si la página está vacía.
+
+    LoginRequestDTO:
+      type: object
+      required:
+        - email
+        - password
+      description: Datos necesarios para iniciar sesión.
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Correo electrónico del usuario.
+        password:
+          type: string
+          format: password
+          maxLength: 255
+          description: Contraseña del usuario.
+
+    LoginResponseDTO:
+      type: object
+      description: Respuesta al iniciar sesión, incluyendo el token JWT.
+      properties:
+        token:
+          type: string
+          maxLength: 2048
+          description: Token JWT para autenticación.
+        userId:
+          type: string
+          format: uuid
+          maxLength: 36
+          description: ID del usuario autenticado.
+        username:
+          type: string
+          maxLength: 255
+          description: Nombre de usuario del usuario autenticado.
+
+    GameFilterRequestDTO:
+      type: object
+      description: Objeto para realizar una búsqueda avanzada de juegos.
+      required:
+        - filter
+      properties:
+        filter:
+          type: string
+          maxLength: 1024
+          description: "La consulta de filtrado en el formato de la API de IGDB. Ejemplo: 'genres = (12, 32) & platforms = (6, 48)'"
+        sort:
+          type: string
+          maxLength: 255
+          description: "El campo por el que ordenar los resultados. Ejemplo: 'total_rating desc'"
+        limit:
+          type: integer
+          format: int32
+          description: "El número máximo de resultados a devolver. Por defecto: 10."
+          default: 10
+          minimum: 1
+          maximum: 50
+        offset:
+          type: integer
+          format: int32
+          description: "El número de resultados a saltar para la paginación. Por defecto: 0."
+          default: 0
+          minimum: 0
