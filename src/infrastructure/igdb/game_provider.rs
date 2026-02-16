@@ -79,12 +79,12 @@ fn map_igdb_game_to_domain(igdb_game: IgdbGame) -> Game {
         summary: igdb_game.summary,
         storyline: igdb_game.storyline,
         release_date: igdb_game.first_release_date.and_then(|ts| chrono::DateTime::from_timestamp(ts, 0).map(|dt| dt.date_naive())),
-        rating: igdb_game.rating,
-        cover_image_url: igdb_game.cover.and_then(|c| c.url).map(|url| format!("https:{}", url)), // IGDB URLs are usually //images.igdb.com...
+        rating: igdb_game.rating.map(|r| r / 10.0), // Convert 0-100 to 0-10
+        cover_image_url: igdb_game.cover.and_then(|c| c.url).map(|url| format!("https:{}", url.replace("t_thumb", "t_cover_big"))), // High quality cover
         platforms: igdb_game.platforms.map(|p| p.into_iter().map(|pl| pl.name).collect()).unwrap_or_default(),
         genres: igdb_game.genres.map(|g| g.into_iter().map(|ge| ge.name).collect()).unwrap_or_default(),
         videos: igdb_game.videos.map(|v| v.into_iter().map(|vi| format!("https://www.youtube.com/watch?v={}", vi.video_id)).collect()).unwrap_or_default(),
-        screenshots: igdb_game.screenshots.map(|s| s.into_iter().filter_map(|sc| sc.url.map(|u| format!("https:{}", u))).collect()).unwrap_or_default(),
-        artworks: igdb_game.artworks.map(|a| a.into_iter().filter_map(|ar| ar.url.map(|u| crate::domain::artwork::Artwork { url: format!("https:{}", u) })).collect()).unwrap_or_default(),
+        screenshots: igdb_game.screenshots.map(|s| s.into_iter().filter_map(|sc| sc.url.map(|u| format!("https:{}", u.replace("t_thumb", "t_screenshot_big")))).collect()).unwrap_or_default(),
+        artworks: igdb_game.artworks.map(|a| a.into_iter().filter_map(|ar| ar.url.map(|u| crate::domain::artwork::Artwork { url: format!("https:{}", u.replace("t_thumb", "t_1080p")) })).collect()).unwrap_or_default(),
     }
 }

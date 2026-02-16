@@ -15,15 +15,16 @@ pub struct Platform {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(try_from = "i32", into = "i32")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[repr(i32)]
 pub enum PlatformType {
+    Unknown = 0,
     Console = 1,
     Arcade = 2,
     Platform = 3,
     OperatingSystem = 4,
     PortableConsole = 5,
     Computer = 6,
-    Unknown = 0,
 }
 
 impl From<PlatformType> for i32 {
@@ -44,7 +45,7 @@ impl TryFrom<i32> for PlatformType {
             5 => Ok(PlatformType::PortableConsole),
             6 => Ok(PlatformType::Computer),
             0 => Ok(PlatformType::Unknown),
-            _ => Ok(PlatformType::Unknown), // Fallback to Unknown for unmapped values, similar to Java implementation
+            _ => Ok(PlatformType::Unknown), // Fallback to Unknown for unmapped values
         }
     }
 }
