@@ -31,7 +31,8 @@ pub struct IgdbPlatform {
     pub id: i64,
     pub name: String,
     pub generation: Option<i32>,
-    pub category: Option<i32>, // Maps to PlatformType
+    #[serde(alias = "category")]
+    pub platform_type: Option<i32>, // Maps to PlatformType (IGDB returns 'platform_type' or 'category')
 }
 
 #[derive(Debug, Deserialize)]
