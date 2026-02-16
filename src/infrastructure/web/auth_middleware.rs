@@ -46,8 +46,10 @@ where
 
 #[derive(Debug)]
 pub enum AuthError {
+    #[allow(dead_code)]
     WrongCredentials,
     MissingCredentials,
+    #[allow(dead_code)]
     TokenCreation,
     InvalidToken,
 }

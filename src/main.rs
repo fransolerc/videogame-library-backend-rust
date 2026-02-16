@@ -9,6 +9,7 @@ use std::net::SocketAddr;
 use axum::Router;
 use sqlx::sqlite::SqlitePoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tower_http::cors::{CorsLayer, Any};
 
 use crate::infrastructure::persistence::user_repository::SqliteUserRepository;
 use crate::infrastructure::persistence::library_repository::SqliteLibraryRepository;
@@ -82,17 +83,22 @@ async fn main() {
     let library_service = Arc::new(LibraryServiceImpl::new(
         library_repository.clone(),
         game_provider.clone(),
-        user_repository.clone(),
         favorite_game_event_publisher.clone(),
     ));
 
     // 6. Configure Routes
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     let app = Router::new()
         .merge(health_routes::routes())
         .merge(user_routes::routes(user_service))
         .merge(game_routes::routes(game_service))
         .merge(platform_routes::routes(platform_service))
-        .merge(library_routes::routes(library_service));
+        .merge(library_routes::routes(library_service))
+        .layer(cors);
 
     // 7. Start Server
     let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8080".to_string());

@@ -8,9 +8,11 @@ use serde_json::json;
 #[derive(Debug)]
 pub enum AppError {
     InternalServerError(anyhow::Error),
+    #[allow(dead_code)]
     BadRequest(String),
     NotFound(String),
     Unauthorized(String),
+    #[allow(dead_code)]
     Conflict(String),
 }
 

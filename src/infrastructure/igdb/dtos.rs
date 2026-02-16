@@ -18,8 +18,10 @@ pub struct IgdbGame {
 
 #[derive(Debug, Deserialize)]
 pub struct IgdbImage {
+    #[allow(dead_code)]
     pub id: i64,
     pub url: Option<String>,
+    #[allow(dead_code)]
     pub image_id: Option<String>,
     // Add other fields if needed
 }
@@ -34,12 +36,14 @@ pub struct IgdbPlatform {
 
 #[derive(Debug, Deserialize)]
 pub struct IgdbGenre {
+    #[allow(dead_code)]
     pub id: i64,
     pub name: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct IgdbVideo {
+    #[allow(dead_code)]
     pub id: i64,
     pub video_id: String, // YouTube ID usually
 }
@@ -48,5 +52,6 @@ pub struct IgdbVideo {
 pub struct TwitchTokenResponse {
     pub access_token: String,
     pub expires_in: i64,
+    #[allow(dead_code)]
     pub token_type: String,
 }

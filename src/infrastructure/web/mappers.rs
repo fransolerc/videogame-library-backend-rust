@@ -81,10 +81,6 @@ pub fn to_platform_dto(platform: Platform) -> PlatformDTO {
     }
 }
 
-pub fn to_platform_dto_list(platforms: Vec<Platform>) -> Vec<PlatformDTO> {
-    platforms.into_iter().map(to_platform_dto).collect()
-}
-
 // User Mappers
 
 pub fn to_user_dto(user: User) -> UserDTO {

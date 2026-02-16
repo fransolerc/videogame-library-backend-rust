@@ -6,14 +6,12 @@ use chrono::Utc;
 use crate::application::ports::input::library_service::LibraryService;
 use crate::application::ports::output::library_repository::LibraryRepository;
 use crate::application::ports::output::game_provider::GameProvider;
-use crate::application::ports::output::user_repository::UserRepository;
 use crate::application::ports::output::favorite_game_event_publisher::{FavoriteGameEventPublisher, FavoriteGameEvent};
 use crate::domain::user::{UserGame, GameStatus};
 
 pub struct LibraryServiceImpl {
     pub library_repository: Arc<dyn LibraryRepository>,
     pub game_provider: Arc<dyn GameProvider>,
-    pub user_repository: Arc<dyn UserRepository>,
     pub favorite_game_event_publisher: Arc<dyn FavoriteGameEventPublisher>,
 }
 
@@ -21,13 +19,11 @@ impl LibraryServiceImpl {
     pub fn new(
         library_repository: Arc<dyn LibraryRepository>,
         game_provider: Arc<dyn GameProvider>,
-        user_repository: Arc<dyn UserRepository>,
         favorite_game_event_publisher: Arc<dyn FavoriteGameEventPublisher>,
     ) -> Self {
         Self {
             library_repository,
             game_provider,
-            user_repository,
             favorite_game_event_publisher,
         }
     }
@@ -36,8 +32,6 @@ impl LibraryServiceImpl {
 #[async_trait]
 impl LibraryService for LibraryServiceImpl {
     async fn upsert_game_in_library(&self, user_id: Uuid, game_id: i64, status: GameStatus) -> Result<Option<UserGame>, String> {
-        // Note: Authorization check is assumed to be handled by the web layer/middleware in Rust.
-
         // Verify game exists
         if self.game_provider.find_by_external_id(game_id).await?.is_none() {
             return Err(format!("Game with id {} not found", game_id));
