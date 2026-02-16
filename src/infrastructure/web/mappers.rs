@@ -7,7 +7,28 @@ use crate::infrastructure::web::dtos::platform_dtos::PlatformDTO;
 use crate::infrastructure::web::dtos::user_dtos::{UserDTO, LoginResponseDTO, UserGameDTO, UserGamePageDTO};
 use crate::infrastructure::web::dtos::common_dtos::{PageableDTO, SortDTO};
 
-// Game Mappers
+
+macro_rules! build_page_dto {
+    ($page:expr, $content:expr, $dto_type:ident) => {
+        $dto_type {
+            content: $content,
+            pageable: PageableDTO {
+                page_number: $page.page,
+                page_size: $page.size,
+                sort: SortDTO { sorted: false, unsorted: true, empty: true },
+            },
+            total_pages: $page.total_pages,
+            total_elements: $page.total_elements,
+            last: $page.page >= $page.total_pages - 1,
+            first: $page.page == 0,
+            size: $page.size,
+            number: $page.page,
+            sort: SortDTO { sorted: false, unsorted: true, empty: true },
+            number_of_elements: $content.len() as i32,
+            empty: $content.is_empty(),
+        }
+    };
+}
 
 pub fn to_game_dto(game: &Game) -> GameDTO {
     GameDTO {
@@ -48,26 +69,15 @@ pub fn to_game_summary_dto(game: Game) -> GameSummaryDTO {
 }
 
 pub fn to_game_page_dto(page: Page<Game>) -> GamePageDTO {
-    GamePageDTO {
-        content: to_game_dto_list(page.content),
-        pageable: PageableDTO {
-            page_number: page.page,
-            page_size: page.size,
-            sort: SortDTO { sorted: false, unsorted: true, empty: true },
-        },
-        total_pages: page.total_pages,
-        total_elements: page.total_elements,
-        last: page.page >= page.total_pages - 1,
-        first: page.page == 0,
-        size: page.size,
-        number: page.page,
-        sort: SortDTO { sorted: false, unsorted: true, empty: true },
-        number_of_elements: page.total_elements as i32, // This should be content.len() actually, but keeping consistent
-        empty: page.total_elements == 0,
-    }
+    let content = to_game_dto_list(page.content);
+    let Page { content: domain_content, page, size, total_elements, total_pages } = page;
+    let dto_content = to_game_dto_list(domain_content);
+    struct PageMeta { page: i32, size: i32, total_elements: i64, total_pages: i32 }
+    let meta = PageMeta { page, size, total_elements, total_pages };
+
+    build_page_dto!(meta, dto_content, GamePageDTO)
 }
 
-// Platform Mappers
 
 pub fn to_platform_dto(platform: Platform) -> PlatformDTO {
     PlatformDTO {
@@ -77,8 +87,6 @@ pub fn to_platform_dto(platform: Platform) -> PlatformDTO {
         platform_type: platform.platform_type,
     }
 }
-
-// User Mappers
 
 pub fn to_user_dto(user: User) -> UserDTO {
     UserDTO {
@@ -111,21 +119,11 @@ pub fn to_user_game_dto_list(user_games: Vec<UserGame>) -> Vec<UserGameDTO> {
 }
 
 pub fn to_user_game_page_dto(page: Page<UserGame>) -> UserGamePageDTO {
-    UserGamePageDTO {
-        content: to_user_game_dto_list(page.content),
-        pageable: PageableDTO {
-            page_number: page.page,
-            page_size: page.size,
-            sort: SortDTO { sorted: false, unsorted: true, empty: true },
-        },
-        total_pages: page.total_pages,
-        total_elements: page.total_elements,
-        last: page.page >= page.total_pages - 1,
-        first: page.page == 0,
-        size: page.size,
-        number: page.page,
-        sort: SortDTO { sorted: false, unsorted: true, empty: true },
-        number_of_elements: page.total_elements as i32,
-        empty: page.total_elements == 0,
-    }
+    let Page { content: domain_content, page, size, total_elements, total_pages } = page;
+    let dto_content = to_user_game_dto_list(domain_content);
+
+    struct PageMeta { page: i32, size: i32, total_elements: i64, total_pages: i32 }
+    let meta = PageMeta { page, size, total_elements, total_pages };
+
+    build_page_dto!(meta, dto_content, UserGamePageDTO)
 }
