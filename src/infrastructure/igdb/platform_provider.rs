@@ -18,6 +18,7 @@ impl IgdbPlatformProvider {
 #[async_trait]
 impl PlatformProvider for IgdbPlatformProvider {
     async fn list_platforms(&self) -> Result<Vec<Platform>, String> {
+        // Request platform_type instead of category
         let query = "fields name, generation, platform_type; limit 500; sort name asc;";
         let platforms: Vec<IgdbPlatform> = self.client.post("platforms", query.to_string()).await?;
 

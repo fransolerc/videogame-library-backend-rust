@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 use crate::domain::user::{UserGame, GameStatus};
+use crate::domain::page::Page;
 
 #[async_trait]
 pub trait LibraryService: Send + Sync {
@@ -10,6 +11,5 @@ pub trait LibraryService: Send + Sync {
     async fn remove_game_from_library(&self, user_id: Uuid, game_id: i64) -> Result<(), String>;
     async fn add_game_to_favorites(&self, user_id: Uuid, game_id: i64) -> Result<UserGame, String>;
     async fn remove_game_from_favorites(&self, user_id: Uuid, game_id: i64) -> Result<(), String>;
-    // TODO: Define Pageable and Page structs
-    async fn list_favorite_games(&self, user_id: Uuid, page: i32, size: i32) -> Result<Vec<UserGame>, String>;
+    async fn list_favorite_games(&self, user_id: Uuid, page: i32, size: i32) -> Result<Page<UserGame>, String>;
 }

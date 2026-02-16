@@ -72,14 +72,12 @@ async fn filter_games(
     let limit = request.limit.unwrap_or(10);
     let offset = request.offset.unwrap_or(0);
 
-    let games = state.game_service.filter_games(
+    let page = state.game_service.filter_games(
         &request.filter,
         request.sort.as_deref().unwrap_or(""),
         limit,
         offset
     ).await.map_err(|e| AppError::InternalServerError(anyhow::anyhow!(e)))?;
 
-    // TODO: Pass correct page info once pagination is fully implemented in domain
-    let page_dto = mappers::to_game_page_dto(games, offset / limit, limit);
-    Ok(Json(page_dto))
+    Ok(Json(mappers::to_game_page_dto(page)))
 }

@@ -138,8 +138,8 @@ async fn list_favorite_games(
     let page = params.page.unwrap_or(0);
     let size = params.size.unwrap_or(20);
 
-    let user_games = state.library_service.list_favorite_games(user_id, page, size).await
+    let page_result = state.library_service.list_favorite_games(user_id, page, size).await
         .map_err(|e| AppError::InternalServerError(anyhow::anyhow!(e)))?;
 
-    Ok(Json(mappers::to_user_game_page_dto(user_games, page, size)))
+    Ok(Json(mappers::to_user_game_page_dto(page_result)))
 }

@@ -67,7 +67,8 @@ impl IgdbClient {
         Ok(token_response.access_token)
     }
 
-    pub async fn post<T: DeserializeOwned>(&self, endpoint: &str, body: String) -> Result<Vec<T>, String> {
+    // Generic post that returns T (can be Vec<Something> or just Something)
+    pub async fn post<T: DeserializeOwned>(&self, endpoint: &str, body: String) -> Result<T, String> {
         let token = self.get_token().await?;
         let url = format!("{}/{}", self.base_url, endpoint);
 
@@ -80,7 +81,6 @@ impl IgdbClient {
             .map_err(|e| e.to_string())?;
 
         if response.status() == StatusCode::UNAUTHORIZED {
-            // Token might be invalid, force refresh next time (simple retry logic could be added here)
             let mut expiry_guard = self.token_expiry.write().await;
             *expiry_guard = SystemTime::UNIX_EPOCH;
             return Err("Unauthorized access to IGDB. Token might be expired.".to_string());
@@ -91,6 +91,10 @@ impl IgdbClient {
             return Err(format!("IGDB API Error: {} - {}", endpoint, error_text));
         }
 
-        response.json::<Vec<T>>().await.map_err(|e| e.to_string())
+        let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+        // Try to deserialize
+        serde_json::from_str::<T>(&response_text)
+            .map_err(|e| format!("JSON Deserialization Error: {} for response: {}", e, response_text))
     }
 }

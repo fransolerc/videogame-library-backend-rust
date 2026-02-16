@@ -3,6 +3,7 @@ use sqlx::{SqlitePool, Row, sqlite::SqliteRow};
 use uuid::Uuid;
 use crate::application::ports::output::library_repository::LibraryRepository;
 use crate::domain::user::{UserGame, GameStatus};
+use crate::domain::page::Page;
 
 pub struct SqliteLibraryRepository {
     pool: SqlitePool,
@@ -83,8 +84,10 @@ impl LibraryRepository for SqliteLibraryRepository {
             .map_err(|e| e.to_string())
     }
 
-    async fn find_by_user_id_and_is_favorite_true(&self, user_id: Uuid, page: i32, size: i32) -> Result<Vec<UserGame>, String> {
+    async fn find_by_user_id_and_is_favorite_true(&self, user_id: Uuid, page: i32, size: i32) -> Result<Page<UserGame>, String> {
         let offset = page * size;
+
+        // 1. Get content
         let rows = sqlx::query("SELECT * FROM user_games WHERE user_id = $1 AND is_favorite = TRUE LIMIT $2 OFFSET $3")
             .bind(user_id)
             .bind(size)
@@ -93,7 +96,18 @@ impl LibraryRepository for SqliteLibraryRepository {
             .await
             .map_err(|e| e.to_string())?;
 
-        Ok(rows.iter().map(map_row).collect())
+        let user_games: Vec<UserGame> = rows.iter().map(map_row).collect();
+
+        // 2. Get total count
+        let count_row = sqlx::query("SELECT COUNT(*) as count FROM user_games WHERE user_id = $1 AND is_favorite = TRUE")
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let total_elements: i64 = count_row.get("count");
+
+        Ok(Page::new(user_games, page, size, total_elements))
     }
 }
 

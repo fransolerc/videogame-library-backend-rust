@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::application::ports::input::game_service::GameService;
 use crate::application::ports::output::game_provider::GameProvider;
 use crate::domain::game::Game;
+use crate::domain::page::Page;
 
 pub struct GameServiceImpl {
     pub game_provider: Arc<dyn GameProvider>,
@@ -28,7 +29,7 @@ impl GameService for GameServiceImpl {
         self.game_provider.find_multiple_by_external_ids(ids).await
     }
 
-    async fn filter_games(&self, filter: &str, sort: &str, limit: i32, offset: i32) -> Result<Vec<Game>, String> {
+    async fn filter_games(&self, filter: &str, sort: &str, limit: i32, offset: i32) -> Result<Page<Game>, String> {
         self.game_provider.filter_games(filter, sort, limit, offset).await
     }
 }

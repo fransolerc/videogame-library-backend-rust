@@ -8,6 +8,7 @@ use crate::application::ports::output::library_repository::LibraryRepository;
 use crate::application::ports::output::game_provider::GameProvider;
 use crate::application::ports::output::favorite_game_event_publisher::{FavoriteGameEventPublisher, FavoriteGameEvent};
 use crate::domain::user::{UserGame, GameStatus};
+use crate::domain::page::Page;
 
 pub struct LibraryServiceImpl {
     pub library_repository: Arc<dyn LibraryRepository>,
@@ -148,7 +149,7 @@ impl LibraryService for LibraryServiceImpl {
         Ok(())
     }
 
-    async fn list_favorite_games(&self, user_id: Uuid, page: i32, size: i32) -> Result<Vec<UserGame>, String> {
+    async fn list_favorite_games(&self, user_id: Uuid, page: i32, size: i32) -> Result<Page<UserGame>, String> {
         self.library_repository.find_by_user_id_and_is_favorite_true(user_id, page, size).await
     }
 }

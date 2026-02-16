@@ -3,3 +3,4 @@ pub mod artwork;
 pub mod platform;
 pub mod user;
 pub mod auth;
+pub mod page;

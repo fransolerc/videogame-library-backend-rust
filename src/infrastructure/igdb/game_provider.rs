@@ -2,8 +2,14 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use crate::application::ports::output::game_provider::GameProvider;
 use crate::domain::game::Game;
+use crate::domain::page::Page;
 use crate::infrastructure::igdb::client::IgdbClient;
 use crate::infrastructure::igdb::dtos::IgdbGame;
+
+#[derive(serde::Deserialize, Debug)]
+struct CountResponse {
+    count: i64,
+}
 
 pub struct IgdbGameProvider {
     client: Arc<IgdbClient>,
@@ -53,7 +59,8 @@ impl GameProvider for IgdbGameProvider {
         Ok(games.into_iter().map(map_igdb_game_to_domain).collect())
     }
 
-    async fn filter_games(&self, filter: &str, sort: &str, limit: i32, offset: i32) -> Result<Vec<Game>, String> {
+    async fn filter_games(&self, filter: &str, sort: &str, limit: i32, offset: i32) -> Result<Page<Game>, String> {
+        // 1. Get the games
         let mut query = format!(
             "fields name, summary, storyline, first_release_date, rating, cover.url, platforms.name, genres.name, videos.video_id, screenshots.url, artworks.url; limit {}; offset {};",
             limit, offset
@@ -68,7 +75,22 @@ impl GameProvider for IgdbGameProvider {
         }
 
         let games: Vec<IgdbGame> = self.client.post("games", query).await?;
-        Ok(games.into_iter().map(map_igdb_game_to_domain).collect())
+        let domain_games: Vec<Game> = games.into_iter().map(map_igdb_game_to_domain).collect();
+
+        // 2. Get the total count
+        let mut count_query = String::new();
+        if !filter.is_empty() {
+            count_query.push_str(&format!("where {};", filter));
+        }
+
+        // IGDB count endpoint returns a single object { "count": 123 }, NOT a list
+        let count_response: CountResponse = self.client.post("games/count", count_query).await?;
+        let total_elements = count_response.count;
+
+        // Calculate page number (0-based)
+        let page = if limit > 0 { offset / limit } else { 0 };
+
+        Ok(Page::new(domain_games, page, limit, total_elements))
     }
 }
 

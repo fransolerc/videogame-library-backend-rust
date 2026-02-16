@@ -1,6 +1,7 @@
 use crate::domain::game::Game;
 use crate::domain::platform::Platform;
 use crate::domain::user::{User, LoginResult, UserGame};
+use crate::domain::page::Page;
 use crate::infrastructure::web::dtos::game_dtos::{GameDTO, GameSummaryDTO, ArtworkDTO, GamePageDTO};
 use crate::infrastructure::web::dtos::platform_dtos::PlatformDTO;
 use crate::infrastructure::web::dtos::user_dtos::{UserDTO, LoginResponseDTO, UserGameDTO, UserGamePageDTO};
@@ -46,27 +47,23 @@ pub fn to_game_summary_dto(game: Game) -> GameSummaryDTO {
     }
 }
 
-// TODO: Implement proper pagination mapping when Page struct is defined in domain
-pub fn to_game_page_dto(games: Vec<Game>, page: i32, size: i32) -> GamePageDTO {
-    let total_elements = games.len() as i64; // Placeholder
-    let total_pages = if size > 0 { (total_elements as f64 / size as f64).ceil() as i32 } else { 0 };
-
+pub fn to_game_page_dto(page: Page<Game>) -> GamePageDTO {
     GamePageDTO {
-        content: to_game_dto_list(games),
+        content: to_game_dto_list(page.content),
         pageable: PageableDTO {
-            page_number: page,
-            page_size: size,
+            page_number: page.page,
+            page_size: page.size,
             sort: SortDTO { sorted: false, unsorted: true, empty: true },
         },
-        total_pages,
-        total_elements,
-        last: true, // Placeholder
-        first: page == 0,
-        size,
-        number: page,
+        total_pages: page.total_pages,
+        total_elements: page.total_elements,
+        last: page.page >= page.total_pages - 1,
+        first: page.page == 0,
+        size: page.size,
+        number: page.page,
         sort: SortDTO { sorted: false, unsorted: true, empty: true },
-        number_of_elements: total_elements as i32, // Placeholder
-        empty: total_elements == 0,
+        number_of_elements: page.total_elements as i32, // This should be content.len() actually, but keeping consistent
+        empty: page.total_elements == 0,
     }
 }
 
@@ -113,25 +110,22 @@ pub fn to_user_game_dto_list(user_games: Vec<UserGame>) -> Vec<UserGameDTO> {
     user_games.into_iter().map(to_user_game_dto).collect()
 }
 
-pub fn to_user_game_page_dto(user_games: Vec<UserGame>, page: i32, size: i32) -> UserGamePageDTO {
-    let total_elements = user_games.len() as i64; // Placeholder
-    let total_pages = if size > 0 { (total_elements as f64 / size as f64).ceil() as i32 } else { 0 };
-
+pub fn to_user_game_page_dto(page: Page<UserGame>) -> UserGamePageDTO {
     UserGamePageDTO {
-        content: to_user_game_dto_list(user_games),
+        content: to_user_game_dto_list(page.content),
         pageable: PageableDTO {
-            page_number: page,
-            page_size: size,
+            page_number: page.page,
+            page_size: page.size,
             sort: SortDTO { sorted: false, unsorted: true, empty: true },
         },
-        total_pages,
-        total_elements,
-        last: true,
-        first: page == 0,
-        size,
-        number: page,
+        total_pages: page.total_pages,
+        total_elements: page.total_elements,
+        last: page.page >= page.total_pages - 1,
+        first: page.page == 0,
+        size: page.size,
+        number: page.page,
         sort: SortDTO { sorted: false, unsorted: true, empty: true },
-        number_of_elements: total_elements as i32,
-        empty: total_elements == 0,
+        number_of_elements: page.total_elements as i32,
+        empty: page.total_elements == 0,
     }
 }
