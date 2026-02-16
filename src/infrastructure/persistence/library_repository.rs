@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{SqlitePool, Row};
+use sqlx::{SqlitePool, Row, sqlite::SqliteRow};
 use uuid::Uuid;
 use crate::application::ports::output::library_repository::LibraryRepository;
 use crate::domain::user::{UserGame, GameStatus};
@@ -30,13 +30,7 @@ impl LibraryRepository for SqliteLibraryRepository {
         .bind(user_game.is_favorite)
         .fetch_one(&self.pool)
         .await
-        .map(|row| UserGame {
-            user_id: row.get::<Uuid, _>("user_id").to_string(),
-            game_id: row.get("game_id"),
-            status: parse_status(&row.get::<String, _>("status")),
-            added_at: row.get("added_at"),
-            is_favorite: row.get("is_favorite"),
-        })
+        .map(|row| map_row(&row))
         .map_err(|e| e.to_string())
     }
 
@@ -48,16 +42,7 @@ impl LibraryRepository for SqliteLibraryRepository {
             .await
             .map_err(|e| e.to_string())?;
 
-        match result {
-            Some(row) => Ok(Some(UserGame {
-                user_id: row.get::<Uuid, _>("user_id").to_string(),
-                game_id: row.get("game_id"),
-                status: parse_status(&row.get::<String, _>("status")),
-                added_at: row.get("added_at"),
-                is_favorite: row.get("is_favorite"),
-            })),
-            None => Ok(None),
-        }
+        Ok(result.map(|row| map_row(&row)))
     }
 
     async fn find_by_user_id(&self, user_id: Uuid) -> Result<Vec<UserGame>, String> {
@@ -67,15 +52,7 @@ impl LibraryRepository for SqliteLibraryRepository {
             .await
             .map_err(|e| e.to_string())?;
 
-        let user_games = rows.into_iter().map(|row| UserGame {
-            user_id: row.get::<Uuid, _>("user_id").to_string(),
-            game_id: row.get("game_id"),
-            status: parse_status(&row.get::<String, _>("status")),
-            added_at: row.get("added_at"),
-            is_favorite: row.get("is_favorite"),
-        }).collect();
-
-        Ok(user_games)
+        Ok(rows.iter().map(map_row).collect())
     }
 
     async fn update(&self, user_game: &UserGame) -> Result<UserGame, String> {
@@ -92,13 +69,7 @@ impl LibraryRepository for SqliteLibraryRepository {
         .bind(user_game.game_id)
         .fetch_one(&self.pool)
         .await
-        .map(|row| UserGame {
-            user_id: row.get::<Uuid, _>("user_id").to_string(),
-            game_id: row.get("game_id"),
-            status: parse_status(&row.get::<String, _>("status")),
-            added_at: row.get("added_at"),
-            is_favorite: row.get("is_favorite"),
-        })
+        .map(|row| map_row(&row))
         .map_err(|e| e.to_string())
     }
 
@@ -122,15 +93,18 @@ impl LibraryRepository for SqliteLibraryRepository {
             .await
             .map_err(|e| e.to_string())?;
 
-        let user_games = rows.into_iter().map(|row| UserGame {
-            user_id: row.get::<Uuid, _>("user_id").to_string(),
-            game_id: row.get("game_id"),
-            status: parse_status(&row.get::<String, _>("status")),
-            added_at: row.get("added_at"),
-            is_favorite: row.get("is_favorite"),
-        }).collect();
+        Ok(rows.iter().map(map_row).collect())
+    }
+}
 
-        Ok(user_games)
+// Helper function to map a database row to the domain entity
+fn map_row(row: &SqliteRow) -> UserGame {
+    UserGame {
+        user_id: row.get::<Uuid, _>("user_id").to_string(),
+        game_id: row.get("game_id"),
+        status: parse_status(&row.get::<String, _>("status")),
+        added_at: row.get("added_at"),
+        is_favorite: row.get("is_favorite"),
     }
 }
 
