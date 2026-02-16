@@ -9,7 +9,9 @@ use crate::infrastructure::web::dtos::common_dtos::{PageableDTO, SortDTO};
 
 
 macro_rules! build_page_dto {
-    ($page:expr, $content:expr, $dto_type:ident) => {
+    ($page:expr, $content:expr, $dto_type:ident) => {{
+        let content_len = $content.len() as i32;
+        let is_empty = $content.is_empty();
         $dto_type {
             content: $content,
             pageable: PageableDTO {
@@ -24,8 +26,8 @@ macro_rules! build_page_dto {
             size: $page.size,
             number: $page.page,
             sort: SortDTO { sorted: false, unsorted: true, empty: true },
-            number_of_elements: $content.len() as i32,
-            empty: $content.is_empty(),
+            number_of_elements: content_len,
+            empty: is_empty,
         }
     };
 }
