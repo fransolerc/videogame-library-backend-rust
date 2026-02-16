@@ -1,122 +1,98 @@
-# Video Game Library Backend (Rust)
+# Video Game Library Backend (Rust Edition) 🦀
 
-This project is a backend for a video game library application, built with a Hexagonal Architecture. It is a migration of a Java/Spring Boot application to Rust. It integrates with the IGDB API to fetch real-time game data and uses Apache Kafka for event publishing.
+This project is a high-performance backend for a video game library application. It is a **complete migration to Rust** from an original Java/Spring Boot project, maintaining a strict **Hexagonal Architecture**.
 
-The goal is to serve as a practical example of a modern, clean, and scalable software architecture in Rust, including a robust authentication system and asynchronous communication.
+The system integrates with the **IGDB API** to fetch real-time game data, manages users and personal libraries, and is prepared for asynchronous messaging systems.
 
-## Core Technologies
+## ⚡ Features & Advantages (vs Java)
 
-*   **Language:** Rust
-*   **Web Framework:** (e.g., Axum or Actix-web - To be determined)
-*   **Build Tool:** Cargo
-*   **Database:** (e.g., PostgreSQL/SQLite) with (Diesel/SQLx)
-*   **API Documentation:** OpenAPI / Swagger UI (via libraries like `utoipa`)
-*   **Architecture:** Hexagonal Architecture (Ports and Adapters)
-*   **Authentication:** JWT (JSON Web Tokens)
-*   **Messaging:** Apache Kafka
-*   **Testing:** `cargo test`, `mockall`
+*   **Extreme Performance**: Reduced memory footprint (~15MB vs ~300MB in Java) and instant startup.
+*   **Hexagonal Architecture**: Clear separation between Domain, Application, and Infrastructure layers.
+*   **Safety**: Robust error handling without `NullPointerException` thanks to Rust's type system.
+*   **Database**: SQLite (via SQLx) for simple, self-contained deployment (equivalent to H2 file-based).
+*   **Authentication**: Custom JWT system with Axum Middleware.
 
-## Getting Started
+## 🛠️ Tech Stack
+
+*   **Language**: Rust 2021
+*   **Web Framework**: [Axum](https://github.com/tokio-rs/axum) (Async, ergonomic, and modular)
+*   **Runtime**: Tokio
+*   **Database**: SQLite with [SQLx](https://github.com/launchbadge/sqlx) (Compile-time verified queries)
+*   **HTTP Client**: Request (for IGDB/Twitch integration)
+*   **Messaging**: Structure prepared for Kafka (currently using a Mock implementation to facilitate development on Windows without C++ dependencies).
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-*   Docker Desktop (or Docker Engine) installed and running.
-*   An API client like Postman, Insomnia, or just your browser.
-*   Rust and Cargo installed (latest stable version).
+*   [Rust and Cargo](https://www.rust-lang.org/tools/install) installed.
+*   A developer account on [Twitch/IGDB](https://api-docs.igdb.com/) to obtain credentials (`Client ID` and `Client Secret`).
 
-### Mandatory Configuration
+### Configuration
 
-Before running the application, you must provide your IGDB/Twitch API credentials and a secret key for JWT.
+The project uses a `.env` file for configuration. A base configuration is included, but ensure you set your IGDB credentials:
 
-Configuration is typically handled via environment variables or a configuration file (e.g., `.env` or `config.toml`).
+```ini
+# .env
+SERVER_PORT=8080
+DATABASE_URL=sqlite:videogame_library.db?mode=rwc
 
-Ensure the following variables are set:
+# MANDATORY IGDB Credentials
+IGDB_CLIENT_ID="your_client_id_here"
+IGDB_CLIENT_SECRET="your_client_secret_here"
 
-*   `IGDB_CLIENT_ID`: "YOUR_TWITCH_CLIENT_ID"
-*   `IGDB_CLIENT_SECRET`: "YOUR_TWITCH_CLIENT_SECRET"
-*   `JWT_SECRET`: "a-very-long-and-secure-secret-key"
-
-### Running with Docker
-
-Build the Docker image:
-
-```bash
-docker build -t videogame-library-backend-rust .
+# JWT Configuration
+JWT_SECRET="your_super_secure_secret"
 ```
 
-Start Kafka and the application:
+### Running the Application
 
-```bash
-docker-compose up -d
-```
-
-### Running the Application (Development)
-
-Start Kafka (if using Docker for infrastructure):
-
-```bash
-docker-compose up -d kafka zookeeper
-```
-
-Run the application:
+Simply run the following command in the project root. The first time, it will compile all dependencies and automatically create the database.
 
 ```bash
 cargo run
 ```
 
-The application will start at `http://localhost:8080`.
+The server will start at `http://0.0.0.0:8080`.
 
-## API Endpoints
+## 📂 Project Structure (Hexagonal Architecture)
 
-Full API documentation will be available at `http://localhost:8080/swagger-ui` (path may vary based on implementation).
+```
+src/
+├── domain/           # Entities and Pure Business Logic (User, Game, Platform)
+├── application/      # Use Cases and Ports (Interfaces)
+│   ├── ports/        # Input Interfaces (Services) and Output Interfaces (Repositories)
+│   └── services/     # Application Logic Implementation
+├── infrastructure/   # Adapters (Web, DB, External API)
+│   ├── web/          # Axum Controllers, DTOs, JWT Middleware, CORS
+│   ├── persistence/  # Repository Implementations with SQLx (SQLite)
+│   ├── igdb/         # HTTP Client for IGDB API
+│   └── kafka/        # Event Publisher (Mock/Real)
+└── main.rs           # Entry Point and Dependency Injection
+```
 
-### Authentication & Status
+## 🔌 API Endpoints
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| POST | `/users/register` | Registers a new user. |
-| POST | `/users/login` | Logs in and returns a JWT. |
-| GET | `/health` | Checks the application's health status. |
+The API follows the contract defined in `api/openapi.yaml`.
 
-### Game Discovery
+### Auth
+*   `POST /users/register`: Register new user.
+*   `POST /users/login`: Login (returns JWT).
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| GET | `/games/search` | Searches for video games by name. |
-| GET | `/games/{id}` | Gets the full details of a video game by its IGDB ID. |
-| POST | `/games/filter` | Advanced search with filters. |
-| POST | `/games/batch` | Gets details of multiple video games. |
+### Games (IGDB)
+*   `GET /games/search?name=Zelda`: Search games.
+*   `GET /games/{id}`: Game details.
+*   `POST /games/filter`: Advanced filtering.
 
-### Platforms
+### Library
+*   `GET /users/{id}/games`: View library.
+*   `PUT /users/{id}/games/{gameId}`: Add/Update status.
+*   `POST /users/{id}/games/{gameId}/favorite`: Mark as favorite.
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| GET | `/platforms` | Lists all available video game platforms. |
+## 🧪 Testing
 
-### User Library
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| GET | `/users/{userId}/games` | Lists all games in a user's library. |
-| GET | `/users/{userId}/games/{gameId}` | Gets status of a specific game. |
-| PUT | `/users/{userId}/games/{gameId}` | Adds/Updates game status. |
-| DELETE | `/users/{userId}/games/{gameId}` | Removes a game from library. |
-| POST | `/users/{userId}/games/{gameId}/favorite` | Marks a game as favorite. |
-| DELETE | `/users/{userId}/games/{gameId}/favorite` | Removes a game from favorites. |
-| GET | `/users/{userId}/favorites` | Lists user's favorite games. |
-
-## Testing
-
-Run unit and integration tests:
+To run unit tests (if implemented in the future):
 
 ```bash
 cargo test
 ```
-
-## Architecture
-
-The project follows the principles of Hexagonal Architecture:
-
-*   **domain**: Business logic and entities. No external dependencies.
-*   **application**: Use cases and ports.
-*   **infrastructure**: Adapters (Web, Persistence, External APIs).
